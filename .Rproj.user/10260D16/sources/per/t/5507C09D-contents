@@ -1,0 +1,87 @@
+---
+title: "Enfermedades de coral"
+author: "Ale H.A."
+date: "31 de agosto de 2018"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(readxl)
+library(tidyverse)
+library(broom)
+library(MuMIn)
+library(knitr)
+library(tidyr)
+library(stringr)
+library(dplyr)
+library(lubridate)
+library(png)
+
+CMadres<- read_excel("C:/Users/Julio César/Desktop/2018-02.13 Datos Alejandra Herrerías/Documents/TesisM.C/Datos Ale-2015.xlsx",sheet = "CMadres")
+
+CM<-CMadres %>% filter(!is.na(`DiamMin`),!is.na(Altura),!is.na(`PorcentMuerto`),
+                       !is.na(PorcentVivo),!is.na(`AreaMuerta`))
+
+
+```
+
+
+
+
+##Las enfermedades 
+A lo largo de la historia de los seres vivos siempre han existido enfermedades que han impactado los ciclos de vida de los organismos, a mediados del siglo XX su incidencia se ha ido incrementando, llegando a reportarse a partir de 1970, 616 nuevos brotes de enfermedades al año, afectando de igual manera en ambientes marinos y terrestres. 
+
+En las colonias de coral es difícil determinar una enfermedad, debido a que se desconoce el agente causal, por lo que solo se registran los signos que ocurren al mismo tiempo y que frecuentemente apuntan a un síndrome o a una enfermedad.
+
+##
+
+Entre los principales signos están: 
+
+* Ys = Signo Amarillo
+* Ws = Signo Blanco
+* Ds = Puntos oscuros
+* BE, BP, BS = Signos de Blanqueamiento
+* BB = Banda Negra
+
+Para evaluar el efecto que tienen sobre las colonias se calcula la superfie total de las colonias y se le resta el área que ha muerto por diversas causas. La superficie promedio de las colonias fue de `r round(mean(CM$SupCol.m2))`, indicando que las colonias contaban con más de 300 años de antigüedad, lamentablemente el promedio de tejido vivo que aún conservaban era de `r round(mean(CM$AreFrag.m2))`.
+
+
+## Modelos que se evaluaron
+```{r echo = TRUE,warning=FALSE,message=FALSE,out.width = "20%", }
+mod1<-lm(AreFrag.m2 ~ frag,data=CM)
+mod2<-lm(AreFrag.m2 ~ frag+Signo,data=CM)
+mod3<-lm(AreFrag.m2 ~ frag+Signo+Signo2+algas,data=CM)
+mod4<-lm(AreFrag.m2 ~ frag:Signo,data=CM)
+mod5<-lm(AreFrag.m2 ~ frag*Signo*Signo2*algas,data=CM)
+
+```
+Donde:
+
+* AreFrag.2 = Área de total de tejido vivo de la colonia
+* frag = No. de fragmentos en los que se dividió la colonia
+* Signo = Diferentes signos encontrados en cada colonia
+* algas = presencia de cualquier tipo de algas
+
+
+## Modelos
+
+```{r echo = FALSE,warning=FALSE,message=FALSE}
+Modelo1<-glance(mod1) %>% dplyr::select(r.squared,df,AIC) %>% mutate(Modelo="mod1")
+Modelo2<-glance(mod2) %>% dplyr::select(r.squared,df,AIC) %>% mutate(Modelo="mod2")
+Modelo3<-glance(mod3) %>% dplyr::select(r.squared,df,AIC) %>% mutate(Modelo="mod3")
+Modelo4<-glance(mod4) %>% dplyr::select(r.squared,df,AIC) %>% mutate(Modelo="mod4")
+Modelo5<-glance(mod5) %>% dplyr::select(r.squared,df,AIC) %>% mutate(Modelo="mod5")
+
+Modelos<-bind_rows(Modelo1,Modelo2,Modelo3,Modelo4,Modelo5) %>% arrange(
+  AIC)%>% mutate(DeltaAIC = AIC-min(AIC))
+kable(Modelos, caption = "Tabla comparativa con las características principales de los modelos ")
+```
+
+##
+```{r echo = FALSE,warning=FALSE,message=FALSE, fig.cap= "Fig. 1 Principales signos encontrados en el área de tejido vivo de las colonias doralinas, el tamaño de los círculos representa la proporción de fragmentos provocados por la presencia de los signos"}
+ggplot(CM, aes(x = Signo, y = AreFrag.m2)) + geom_point(aes(
+  color=Signo2,size = frag))+theme_classic()+scale_color_manual(
+    values=c("green2","black", "gray", "darkseagreen1","darkslategray3","goldenrod","snow2","Yellow"))
+
+```
